@@ -1,17 +1,18 @@
-# GitHub JSON 데이터를 BigQuery로 업로딩 가이드
+# GitHub의 제품 및 이벤트 JSON 데이터를 BigQuery로 업로드 가이드
 
-이 문서는 GitHub에 저장된 `retail_products.json` 파일을 Google BigQuery의 지정된 데이터 세트 및 테이블로 로드하는 방법을 안내합니다. 모든 로드 작업은 `bq` 명령줄 도구를 사용합니다.
+이 문서는 GitHub에 저장된 `retail_products.json` (제품 카탈로그) 파일과 `recent_retail_events.json` (사용자 이벤트) 파일을 처리하여 Google BigQuery의 `retail` 데이터 세트 내에 각각 테이블로 로드하는 방법을 안내합니다.
 
 ## 목차
 
 1.  [사전 준비 사항](#1-사전-준비-사항)
 2.  [Google Cloud 프로젝트 ID 환경 변수 설정](#2-google-cloud-프로젝트-id-환경-변수-설정)
-3.  [(선택 사항) BigQuery 데이터 세트 생성](#3-선택-사항-bigquery-데이터-세트-생성)
-4.  [GitHub에서 데이터 파일 다운로드](#4-github에서-데이터-파일-다운로드)
-5.  [선택 사항: `update_event_time.py`를 사용한 이벤트 데이터 처리](#5-선택-사항-update_event_timepy를-사용한-이벤트-데이터-처리)
-6.  [BigQuery 테이블로 데이터 로드](#6-bigquery-테이블로-데이터-로드)
-7.  [데이터 업로드 확인](#7-데이터-업로드-확인)
-8.  [중요 참고 사항](#8-중요-참고-사항)
+3.  [(선택 사항) `retail` BigQuery 데이터 세트 생성](#3-선택-사항-retail-bigquery-데이터-세트-생성)
+4.  [GitHub에서 필요 파일 다운로드](#4-github에서-필요-파일-다운로드)
+5.  [이벤트 데이터 처리 및 GCS 업로드 (`update_event_time.py` 사용)](#5-이벤트-데이터-처리-및-gcs-업로드-update_event_timepy-사용)
+6.  [GCS에 업로드된 이벤트 데이터 검증](#6-gcs에-업로드된-이벤트-데이터-검증)
+7.  [BigQuery 테이블로 데이터 로드](#7-bigquery-테이블로-데이터-로드)
+8.  [데이터 업로드 확인](#8-데이터-업로드-확인)
+9.  [중요 참고 사항](#9-중요-참고-사항)
 
 ## 1. 사전 준비 사항
 
@@ -23,7 +24,7 @@
     gcloud init
     gcloud auth application-default login
     ```
-*   **기본 프로젝트 설정 (gcloud용)**: 다음 명령어로 `gcloud` 명령어의 기본 프로젝트를 설정합니다. 이 README의 `bq` 명령어는 아래 단계에서 설정할 환경 변수를 사용합니다. `[YOUR_PROJECT_ID]`를 실제 Google Cloud 프로젝트 ID로 변경합니다.
+*   **기본 프로젝트 설정 (gcloud용)**: 다음 명령어로 `gcloud` 명령어의 기본 프로젝트를 설정합니다. `[YOUR_PROJECT_ID]`를 실제 Google Cloud 프로젝트 ID로 변경합니다.
     ```bash
     gcloud config set project [YOUR_PROJECT_ID]
     ```
@@ -38,8 +39,7 @@ export GCP_PROJECT_ID="[YOUR_PROJECT_ID]"
 ```
 터미널 세션 동안 유지됩니다. 영구적으로 설정하려면 셸 설정 파일(예: `.bashrc`, `.zshrc`)에 추가하세요.
 
-**Windows (Command Prompt):**
-```bash
+**Windows (Command Prompt):**```bash
 set GCP_PROJECT_ID=[YOUR_PROJECT_ID]
 ```
 현재 Command Prompt 세션 동안 유지됩니다.
@@ -52,7 +52,7 @@ $env:GCP_PROJECT_ID="[YOUR_PROJECT_ID]"
 
 설정 후, 환경 변수가 올바르게 설정되었는지 확인합니다 (예: Linux/macOS에서 `echo $GCP_PROJECT_ID`).
 
-## 3. (선택 사항) BigQuery 데이터 세트 생성
+## 3. (선택 사항) `retail` BigQuery 데이터 세트 생성
 
 데이터를 로드할 `retail` 데이터 세트가 아직 없다면 다음 명령어를 사용하여 생성합니다. 명령어는 위에서 설정한 `$GCP_PROJECT_ID` (또는 Windows의 경우 `%GCP_PROJECT_ID%`) 환경 변수를 사용합니다.
 
@@ -64,31 +64,34 @@ $env:GCP_PROJECT_ID="[YOUR_PROJECT_ID]"
 
     데이터 세트가 이미 존재한다면 이 단계는 건너뛰어도 됩니다. `bq --project_id=$GCP_PROJECT_ID ls` 명령어로 데이터 세트 목록을 확인할 수 있습니다.
 
-## 4. GitHub에서 데이터 파일 다운로드
+## 4. GitHub에서 필요 파일 다운로드
 
-다음 명령어를 사용하여 GitHub 저장소에서 JSON 파일을 로컬 환경으로 다운로드합니다.
+다음 명령어를 사용하여 GitHub 저장소에서 필요한 JSON 파일들과 Python 스크립트를 로컬 환경으로 다운로드합니다.
 `[YOUR_GITHUB_USERNAME]`, `[YOUR_REPOSITORY_NAME]`, `[BRANCH_NAME]`을 실제 GitHub 사용자 이름, 저장소 이름, 브랜치 이름으로 변경하세요. 일반적으로 브랜치 이름은 `main` 또는 `master`입니다.
 
 ```bash
-# retail_products.json 다운로드
+# 제품 카탈로그 데이터 다운로드
 curl -L -o retail_products.json https://raw.githubusercontent.com/[YOUR_GITHUB_USERNAME]/[YOUR_REPOSITORY_NAME]/[BRANCH_NAME]/retail_products.json
 
-# 예시: 이벤트 데이터 파일 다운로드 (리포지토리에 있는 경우)
-# curl -L -o recent_retail_events.json https://raw.githubusercontent.com/[YOUR_GITHUB_USERNAME]/[YOUR_REPOSITORY_NAME]/[BRANCH_NAME]/recent_retail_events.json
+# 사용자 이벤트 데이터 원본 파일 다운로드
+curl -L -o recent_retail_events.json https://raw.githubusercontent.com/[YOUR_GITHUB_USERNAME]/[YOUR_REPOSITORY_NAME]/[BRANCH_NAME]/recent_retail_events.json
+
+# Python 스크립트 다운로드
+curl -L -o update_event_time.py https://raw.githubusercontent.com/[YOUR_GITHUB_USERNAME]/[YOUR_REPOSITORY_NAME]/[BRANCH_NAME]/update_event_time.py
 ```
-(또는 `wget` 사용: `wget -O merchant_center_products.json [URL]` )
+(또는 `wget` 사용: `wget -O retail_products.json [URL]` )
 
-## 5. 선택 사항: `update_event_time.py`를 사용한 이벤트 데이터 처리
+## 5. 이벤트 데이터 처리 및 GCS 업로드 (`update_event_time.py` 사용)
 
-만약 리포지토리에 `update_event_time.py` 스크립트와 관련 이벤트 데이터 파일(예: `recent_retail_events.json`)이 포함되어 있다면, 이 Python 스크립트를 사용하여 데이터를 처리할 수 있습니다. 스크립트는 각 JSON 라인의 `eventTime` 필드를 최근 33일 동안 선형적으로 분포하도록 수정하고, 시간 부분을 무작위화합니다. 처리된 파일은 `GCS_BUCKET_PATH` 환경 변수로 지정된 Google Cloud Storage(GCS) 버킷에 업로드됩니다.
+다운로드한 `recent_retail_events.json` 파일의 `eventTime`을 수정하고 Google Cloud Storage(GCS)에 업로드하기 위해 `update_event_time.py` Python 스크립트를 사용합니다. 이 스크립트는 각 JSON 라인의 `eventTime` 필드를 최근 33일 동안 선형적으로 분포하도록 수정하고, 시간 부분을 무작위화합니다.
 
 **스크립트 실행을 위한 사전 준비 사항:**
 *   Python 3
 *   Google Cloud SDK 설치 및 인증 완료 (`gsutil`이 업로드에 사용됨).
 
 **설정:**
-1.  **스크립트 입력 파일:** 스크립트는 기본적으로 `recent_retail_events.json`을 입력으로 사용하도록 하드코딩되어 있습니다. 이 파일이 스크립트와 동일한 디렉터리에 있는지 확인하거나, 스크립트 내의 `INPUT_JSON_FILE` 변수를 수정하십시오.
-2.  **GCS 버킷 경로 환경 변수 설정:** 스크립트는 `GCS_BUCKET_PATH` 환경 변수 설정을 필요로 합니다. 이 변수는 처리된 파일이 업로드될 GCS 버킷 및 경로를 정의해야 합니다. GCS에 저장되는 파일명은 입력 파일명과 동일합니다 (예: `recent_retail_events.json`).
+1.  **스크립트 입력 파일:** `update_event_time.py` 스크립트는 기본적으로 `recent_retail_events.json`을 입력으로 사용하도록 하드코딩되어 있습니다. 이 파일이 스크립트와 동일한 디렉터리에 있는지 확인하십시오. (필요시 스크립트 내 `INPUT_JSON_FILE` 변수 수정)
+2.  **GCS 버킷 경로 환경 변수 설정:** 스크립트는 `GCS_BUCKET_PATH` 환경 변수 설정을 필요로 합니다. 이 변수는 처리된 파일이 업로드될 GCS 버킷 및 경로를 정의해야 합니다. GCS에 저장되는 파일명은 입력 파일명과 동일합니다 (즉, `recent_retail_events.json`).
 
     **Linux / macOS:**
     ```bash
@@ -112,23 +115,57 @@ curl -L -o retail_products.json https://raw.githubusercontent.com/[YOUR_GITHUB_U
 ```bash
 python3 update_event_time.py
 ```
+스크립트 실행 후, 처리된 `recent_retail_events.json` 파일은 지정된 GCS 위치에 업로드됩니다.
 
-스크립트 실행 후, 처리된 파일은 지정된 GCS 위치에서 사용할 수 있게 됩니다. 이 GCS URI를 후속 데이터 수집 작업(예: BigQuery 또는 Retail API로 로드)에 사용할 수 있으며, 필요에 따라 로드 명령을 조정해야 합니다.
+## 6. GCS에 업로드된 이벤트 데이터 검증
 
-## 6. BigQuery 테이블로 데이터 로드
+`update_event_time.py` 스크립트로 GCS에 업로드된 이벤트 데이터가 올바르게 처리되었는지 확인합니다.
 
-다운로드한 (또는 해당하는 경우 처리된) JSON 파일을 사용하여 BigQuery 테이블에 데이터를 로드합니다. 명령어는 설정된 `$GCP_PROJECT_ID` 환경 변수를 사용합니다.
-
-*   `merchant_center_products.json`을 `merchant_center.products` 테이블로 로드:
+1.  **GCS에서 파일 내용 일부 확인 (처음 몇 줄):**
+    `GCS_BUCKET_PATH` 환경 변수와 `recent_retail_events.json` 파일명을 조합하여 GCS URI를 구성합니다.
     ```bash
-    bq load --project_id=$GCP_PROJECT_ID \
-      --source_format=NEWLINE_DELIMITED_JSON \
-      --autodetect \
-      merchant_center.products \
-      ./merchant_center_products.json
+    # GCS_BUCKET_PATH 환경 변수가 설정되어 있다고 가정
+    PROCESSED_EVENT_FILE_GCS_URI=""
+    TEMP_GCS_PATH="$GCS_BUCKET_PATH" # 환경 변수 값 임시 저장
+
+    # gs:// 접두사 추가 (없는 경우)
+    if [[ ! "$TEMP_GCS_PATH" == gs://* ]]; then
+        TEMP_GCS_PATH="gs://$TEMP_GCS_PATH"
+    fi
+
+    # 경로 마지막에 슬래시 추가 (없는 경우)
+    if [[ "${TEMP_GCS_PATH: -1}" != "/" ]]; then
+        PROCESSED_EVENT_FILE_GCS_URI="${TEMP_GCS_PATH}/recent_retail_events.json"
+    else
+        PROCESSED_EVENT_FILE_GCS_URI="${TEMP_GCS_PATH}recent_retail_events.json"
+    fi
+
+    echo "Verifying file: $PROCESSED_EVENT_FILE_GCS_URI"
+    gsutil cat "$PROCESSED_EVENT_FILE_GCS_URI" | head -n 5
+    ```
+    출력된 JSON 객체들의 `eventTime` 필드가 최근 33일 이내의 날짜와 무작위 시간으로 변경되었는지 확인합니다.
+
+2.  **(선택 사항) GCS에서 파일 크기 및 메타데이터 확인:**
+    ```bash
+    gsutil ls -lh "$PROCESSED_EVENT_FILE_GCS_URI"
+    ```
+    파일 크기가 예상과 비슷한지 확인합니다.
+
+3.  **(선택 사항) 로컬로 다운로드하여 전체 파일 검토:**
+    ```bash
+    gsutil cp "$PROCESSED_EVENT_FILE_GCS_URI" ./downloaded_events_check.json
+    # less ./downloaded_events_check.json 또는 다른 텍스트 편집기로 확인
+    rm ./downloaded_events_check.json # 확인 후 삭제
     ```
 
-*   `retail_products.json`을 `retail.products` 테이블로 로드:
+데이터가 예상대로 수정되었다면 다음 단계로 진행합니다.
+
+## 7. BigQuery 테이블로 데이터 로드
+
+다운로드한 제품 카탈로그 데이터와 GCS에 업로드된 처리된 이벤트 데이터를 사용하여 BigQuery 테이블에 로드합니다. 명령어는 설정된 `$GCP_PROJECT_ID` 환경 변수를 사용합니다.
+
+*   **제품 카탈로그 데이터 로드 (`retail_products.json`):**
+    로컬에 다운로드된 `retail_products.json` 파일을 `retail.products` 테이블로 로드합니다.
     ```bash
     bq load --project_id=$GCP_PROJECT_ID \
       --source_format=NEWLINE_DELIMITED_JSON \
@@ -136,40 +173,50 @@ python3 update_event_time.py
       retail.products \
       ./retail_products.json
     ```
-    (Windows Command Prompt에서는 `$GCP_PROJECT_ID` 대신 `%GCP_PROJECT_ID%`를 사용하세요.)
 
-    *만약 Python 스크립트를 사용하여 `retail_products.json`(또는 유사한 파일)을 처리하고 GCS에 업로드했다면, `./retail_products.json` 부분을 해당 GCS URI(예: `gs://your-gcs-bucket-name/optional-path/retail_products.json`)로 대체해야 합니다. 스키마(자동 감지 또는 `--schema`로 지정)가 처리된 데이터와 일치하는지 확인하십시오.*
+*   **사용자 이벤트 데이터 로드 (처리된 `recent_retail_events.json`):**
+    이전 단계에서 Python 스크립트로 처리되어 GCS에 업로드된 `recent_retail_events.json` 파일을 `retail.user_events` 테이블로 로드합니다. (테이블명 `user_events`는 예시이며, 필요에 따라 변경 가능합니다.)
+    ```bash
+    # PROCESSED_EVENT_FILE_GCS_URI 변수가 이전 단계에서 설정되었다고 가정
+    # 또는 직접 GCS URI를 입력합니다.
+    # 예: gs://your-bucket/path/recent_retail_events.json
+    bq load --project_id=$GCP_PROJECT_ID \
+      --source_format=NEWLINE_DELIMITED_JSON \
+      --autodetect \
+      retail.user_events \
+      "$PROCESSED_EVENT_FILE_GCS_URI"
+    ```
+    (Windows Command Prompt에서는 `$GCP_PROJECT_ID` 대신 `%GCP_PROJECT_ID%`를 사용하고, GCS URI를 적절히 인용부호로 감싸세요.)
 
 **참고:**
 *   `--source_format=NEWLINE_DELIMITED_JSON`: JSON 파일이 줄 바꿈으로 구분된 JSON (NDJSON) 형식임을 나타냅니다.
-*   `--autodetect`: BigQuery가 데이터의 스키마를 자동으로 추론하도록 합니다. 프로덕션 환경에서는 명시적 스키마 정의(`--schema`와 스키마 파일 사용)가 더 안정적입니다.
-*   `./merchant_center_products.json` 및 `./retail_products.json`: 현재 디렉터리에 있는 로컬 파일 경로입니다.
+*   `--autodetect`: BigQuery가 데이터의 스키마를 자동으로 추론하도록 합니다. 프로덕션 환경이나 특정 데이터 타입 및 모드(예: REQUIRED, NULLABLE)가 중요한 경우에는 명시적 스키마 정의 (JSON 스키마 파일과 함께 `--schema` 플래그 사용)가 더 안정적입니다.
 
-## 7. 데이터 업로드 확인
+## 8. 데이터 업로드 확인
 
 데이터가 테이블에 성공적으로 로드되었는지 확인하려면 다음 `bq` 명령어를 사용하거나 Google Cloud Console의 BigQuery UI에서 직접 쿼리할 수 있습니다.
 
-*   `merchant_center.products` 테이블의 처음 5개 행 확인:
-    ```bash
-    bq head -n 5 $GCP_PROJECT_ID:merchant_center.products
-    ```
 *   `retail.products` 테이블의 처음 5개 행 확인:
     ```bash
     bq head -n 5 $GCP_PROJECT_ID:retail.products
+    ```
+*   `retail.user_events` 테이블의 처음 5개 행 확인:
+    ```bash
+    bq head -n 5 $GCP_PROJECT_ID:retail.user_events
     ```
 
 *   각 테이블의 총 행 수 확인 (SQL 쿼리):
     ```bash
     bq query --project_id=$GCP_PROJECT_ID --use_legacy_sql=false \
-    "SELECT COUNT(*) FROM \`$GCP_PROJECT_ID.merchant_center.products\`"
+    "SELECT COUNT(*) FROM \`$GCP_PROJECT_ID.retail.products\`"
 
     bq query --project_id=$GCP_PROJECT_ID --use_legacy_sql=false \
-    "SELECT COUNT(*) FROM \`$GCP_PROJECT_ID.retail.products\`"
+    "SELECT COUNT(*) FROM \`$GCP_PROJECT_ID.retail.user_events\`"
     ```
     (Windows Command Prompt에서는 `$GCP_PROJECT_ID` 대신 `%GCP_PROJECT_ID%`를 사용하세요. SQL 쿼리 문자열 내의 `$GCP_PROJECT_ID`는 셸에 의해 확장되어야 하므로, 쿼리 문자열을 작은따옴표(') 대신 큰따옴표(")로 감싸는 것이 중요합니다. 만약 작은따옴표를 사용해야 한다면, 변수를 문자열 밖에 두거나 문자열 연결을 사용해야 합니다.)
 
-## 8. 중요 참고 사항
+## 9. 중요 참고 사항
 
-*   **JSON 파일 형식**: BigQuery는 **줄 바꿈으로 구분된 JSON (NDJSON)** 형식의 파일을 예상합니다.
+*   **JSON 파일 형식**: BigQuery는 **줄 바꿈으로 구분된 JSON (NDJSON)** 형식의 파일을 예상합니다. 각 JSON 객체는 파일의 개별 줄에 있어야 합니다.
 *   **오류 처리**: 로드 중 오류 발생 시 `bq` 명령어 출력 메시지를 확인하고, `bq ls -j --project_id=$GCP_PROJECT_ID` 및 `bq show -j --project_id=$GCP_PROJECT_ID [JOB_ID]`로 세부 정보를 확인하세요.
-*   **스키마 자동 감지 제한**: `--autodetect`는 편리하지만, 프로덕션 환경이나 특정 데이터 타입 및 모드(예: REQUIRED, NULLABLE)가 중요한 경우에는 명시적 스키마 정의 (JSON 스키마 파일과 함께 `--schema` 플래그 사용)가 더 안정적입니다.
+*   **스키마 관리**: `--autodetect`는 편리하지만, 데이터 타입이나 필드 모드(NULLABLE, REQUIRED 등)를 정확하게 제어해야 하는 프로덕션 환경에서는 JSON 스키마 파일을 직접 정의하여 `--schema` 플래그와 함께 사용하는 것이 좋습니다.

@@ -98,7 +98,7 @@ Use the downloaded JSON files to load data into your BigQuery tables. Each file 
     ```bash
     bq load --project_id=$GCP_PROJECT_ID \
       --source_format=NEWLINE_DELIMITED_JSON \
-      --autodetect \
+      --schema=./retail_products_schema.json \
       retail.products \
       ./retail_products.json
     ```

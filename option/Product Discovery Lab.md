@@ -64,7 +64,6 @@ Google Cloud에 있는 동안 자체 컴퓨터에서 Google Cloud를 원격으�
     ```bash
     gcloud auth list
     ```
-    복사됨!
 
     **출력:**
     ```
@@ -74,7 +73,6 @@ Google Cloud에 있는 동안 자체 컴퓨터에서 Google Cloud를 원격으�
     To set the active account, run:
         gcloud config set account `ACCOUNT`
     ```
-    복사됨!
 
     **참고:** `gcloud` 명령줄 도구는 Google Cloud의 강력하고 통합된 명령줄 도구입니다. Cloud Shell에 사전 설치되어 제공됩니다. `gcloud`의 기능 중에는 셸에서의 탭 완성이 있습니다. 자세한 내용은 [gcloud CLI 개요 가이드](https://cloud.google.com/sdk/gcloud/overview?hl=ko)를 참조하십시오.
 
@@ -82,7 +80,6 @@ Google Cloud에 있는 동안 자체 컴퓨터에서 Google Cloud를 원격으�
     ```bash
     gcloud config list project
     ```
-    복사됨!
 
     **출력:**
     ```
@@ -92,7 +89,7 @@ Google Cloud에 있는 동안 자체 컴퓨터에서 Google Cloud를 원격으�
     올바른 프로젝트가 표시되지 않으면 다음 명령으로 설정할 수 있습니다.
     ```bash
     gcloud config set project [PROJECT_ID]
-    ```    복사됨!
+    ```
 
     **출력:**
     ```
@@ -319,7 +316,6 @@ Retail Recommendations AI 또는 Retail Search API를 사용하기 전에 Retail
     export USER_ACCOUNT=$(gcloud config list --format 'value(core.account)')
     gcloud iam service-accounts add-iam-policy-binding $SA_NAME@$PROJECT_ID.iam.gserviceaccount.com --member "user:$USER_ACCOUNT" --role roles/iam.serviceAccountTokenCreator
     ```
-    복사됨!
 
 2.  Retail API에 대한 임시 액세스 토큰을 생성합니다.
     ```bash

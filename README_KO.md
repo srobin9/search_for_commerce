@@ -174,20 +174,6 @@ python3 update_event_time.py
       ./retail_products.json
     ```
 
-*   **사용자 이벤트 데이터 로드 (처리된 `recent_retail_events.json`):**
-    이전 단계에서 Python 스크립트로 처리되어 GCS에 업로드된 `recent_retail_events.json` 파일을 `retail.user_events` 테이블로 로드합니다. (테이블명 `user_events`는 예시이며, 필요에 따라 변경 가능합니다.)
-    ```bash
-    # PROCESSED_EVENT_FILE_GCS_URI 변수가 이전 단계에서 설정되었다고 가정
-    # 또는 직접 GCS URI를 입력합니다.
-    # 예: gs://your-bucket/path/recent_retail_events.json
-    bq load --project_id=$GCP_PROJECT_ID \
-      --source_format=NEWLINE_DELIMITED_JSON \
-      --autodetect \
-      retail.user_events \
-      "$PROCESSED_EVENT_FILE_GCS_URI"
-    ```
-    (Windows Command Prompt에서는 `$GCP_PROJECT_ID` 대신 `%GCP_PROJECT_ID%`를 사용하고, GCS URI를 적절히 인용부호로 감싸세요.)
-
 **참고:**
 *   `--source_format=NEWLINE_DELIMITED_JSON`: JSON 파일이 줄 바꿈으로 구분된 JSON (NDJSON) 형식임을 나타냅니다.
 *   `--autodetect`: BigQuery가 데이터의 스키마를 자동으로 추론하도록 합니다. 프로덕션 환경이나 특정 데이터 타입 및 모드(예: REQUIRED, NULLABLE)가 중요한 경우에는 명시적 스키마 정의 (JSON 스키마 파일과 함께 `--schema` 플래그 사용)가 더 안정적입니다.

@@ -1,6 +1,6 @@
 # GitHub JSON 데이터를 BigQuery로 업로딩 가이드
 
-이 문서는 GitHub에 저장된 `merchant_center_products.json` 및 `retail_products.json` 파일을 Google BigQuery의 지정된 데이터 세트 및 테이블로 로드하는 방법을 안내합니다. 모든 로드 작업은 `bq` 명령줄 도구를 사용합니다.
+이 문서는 GitHub에 저장된 `retail_products.json` 파일을 Google BigQuery의 지정된 데이터 세트 및 테이블로 로드하는 방법을 안내합니다. 모든 로드 작업은 `bq` 명령줄 도구를 사용합니다.
 
 ## 목차
 
@@ -54,12 +54,8 @@ $env:GCP_PROJECT_ID="[YOUR_PROJECT_ID]"
 
 ## 3. (선택 사항) BigQuery 데이터 세트 생성
 
-데이터를 로드할 `merchant_center` 및 `retail` 데이터 세트가 아직 없다면 다음 명령어를 사용하여 생성합니다. 명령어는 위에서 설정한 `$GCP_PROJECT_ID` (또는 Windows의 경우 `%GCP_PROJECT_ID%`) 환경 변수를 사용합니다.
+데이터를 로드할 `retail` 데이터 세트가 아직 없다면 다음 명령어를 사용하여 생성합니다. 명령어는 위에서 설정한 `$GCP_PROJECT_ID` (또는 Windows의 경우 `%GCP_PROJECT_ID%`) 환경 변수를 사용합니다.
 
-*   `merchant_center` 데이터 세트 생성:
-    ```bash
-    bq --project_id=$GCP_PROJECT_ID mk --dataset merchant_center
-    ```
 *   `retail` 데이터 세트 생성:
     ```bash
     bq --project_id=$GCP_PROJECT_ID mk --dataset retail
@@ -74,9 +70,6 @@ $env:GCP_PROJECT_ID="[YOUR_PROJECT_ID]"
 `[YOUR_GITHUB_USERNAME]`, `[YOUR_REPOSITORY_NAME]`, `[BRANCH_NAME]`을 실제 GitHub 사용자 이름, 저장소 이름, 브랜치 이름으로 변경하세요. 일반적으로 브랜치 이름은 `main` 또는 `master`입니다.
 
 ```bash
-# merchant_center_products.json 다운로드
-curl -L -o merchant_center_products.json https://raw.githubusercontent.com/[YOUR_GITHUB_USERNAME]/[YOUR_REPOSITORY_NAME]/[BRANCH_NAME]/merchant_center_products.json
-
 # retail_products.json 다운로드
 curl -L -o retail_products.json https://raw.githubusercontent.com/[YOUR_GITHUB_USERNAME]/[YOUR_REPOSITORY_NAME]/[BRANCH_NAME]/retail_products.json
 

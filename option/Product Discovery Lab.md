@@ -103,7 +103,7 @@ Google Cloud에 있는 동안 자체 컴퓨터에서 Google Cloud를 원격으�
 
 Retail Recommendations AI 또는 Retail Search API를 사용하기 전에 Retail API를 활성화해야 합니다.
 
-1.  **탐색 메뉴**(탐색 메뉴 아이콘)에서 인공 지능 섹션 아래 **모든 제품 보기**를 클릭하고 **Search for Retail**을 선택합니다.
+1.  **탐색 메뉴**(탐색 메뉴 아이콘)에서 인공 지능 섹션 아래 **모든 제품 보기**를 클릭하고 **Search for Commerce**를 선택합니다.
 
 2.  **API 켜기**를 클릭합니다.
 
@@ -119,7 +119,7 @@ Retail Recommendations AI 또는 Retail Search API를 사용하기 전에 Retail
 
 `merchant_center.products` 테이블에는 Google Merchant Center 제품 테이블 스키마를 사용하여 Google Merchant Center의 테스트 계정에서 내보낸 카탈로그 데이터가 포함되어 있습니다. 이 데이터 세트는 이전 Recommendations AI Console 또는 API를 사용하여 카탈로그 데이터로 가져올 수 있습니다. Recommendations AI API를 대체하는 Retail API는 현재 Merchant Center 제품 테이블 스키마를 사용하는 데이터 가져오기를 지원하지 않으며 모든 데이터 가져오기는 Retail 스키마를 사용해야 합니다. 데이터 가져오기 오류를 검사하는 방법을 확인하기 위해 Retail API를 사용하여 이 데이터를 계속 가져오려고 시도합니다.
 
-1.  GCP Console에서 **Search for Retail > 데이터**를 클릭하여 Retail 데이터 관리 페이지를 엽니다.
+1.  GCP Console에서 **Search for Commerce > 데이터**를 클릭하여 Retail 데이터 관리 페이지를 엽니다.
 
 2.  **카탈로그** 탭이 선택되어 있는지 확인하고 **가져오기**를 클릭합니다.
 
@@ -142,7 +142,7 @@ Retail Recommendations AI 또는 Retail Search API를 사용하기 전에 Retail
 
 이 작업에서는 Retail 제품 스키마를 사용하는 BigQuery 테이블에서 카탈로그로 제품 데이터를 가져옵니다.
 
-1.  GCP Console의 **탐색 메뉴**(탐색 메뉴 아이콘)에서 인공 지능 섹션 아래 **모든 제품 보기**를 클릭하고 **Search for Retail > 데이터**를 선택하여 Retail 데이터 관리 페이지를 엽니다.
+1.  GCP Console의 **탐색 메뉴**(탐색 메뉴 아이콘)에서 인공 지능 섹션 아래 **모든 제품 보기**를 클릭하고 **Search for Commerce > 데이터**를 선택하여 Retail 데이터 관리 페이지를 엽니다.
 
 2.  **카탈로그** 탭이 선택되어 있는지 확인하고 **가져오기**를 클릭합니다.
 
@@ -172,7 +172,7 @@ Retail Recommendations AI 또는 Retail Search API를 사용하기 전에 Retail
 
 9.  가져오기 작업이 성공적으로 예약되었다는 팝업을 닫으려면 **X**를 클릭합니다.
 
-10. Search for Retail 탐색 메뉴에서 **데이터**를 클릭한 다음 **활동 상태**를 클릭하여 가져오기 작업의 진행 상황을 모니터링합니다.
+10. Search for Commerce 탐색 메뉴에서 **데이터**를 클릭한 다음 **활동 상태**를 클릭하여 가져오기 작업의 진행 상황을 모니터링합니다.
 
     가져오기 작업은 제품 카탈로그 가져오기 활동 섹션의 가져오기 작업 상태가 **성공**으로 변경되는 데 1~2분이 걸립니다. 총 1268개의 항목이 가져옵니다.
 
@@ -180,7 +180,7 @@ Retail Recommendations AI 또는 Retail Search API를 사용하기 전에 Retail
 
 이 작업에서는 BigQuery 테이블에서 사용자 이벤트 데이터를 가져옵니다.
 
-1.  GCP Console의 **탐색 메뉴**(탐색 메뉴 아이콘)에서 인공 지능 섹션 아래 **모든 제품 보기**를 클릭하고 **Search for Retail > 데이터**를 선택하여 Retail 데이터 관리 페이지를 엽니다.
+1.  GCP Console의 **탐색 메뉴**(탐색 메뉴 아이콘)에서 인공 지능 섹션 아래 **모든 제품 보기**를 클릭하고 **Search for Commerce > 데이터**를 선택하여 Retail 데이터 관리 페이지를 엽니다.
 
 2.  **이벤트** 탭이 선택되어 있는지 확인하고 **가져오기**를 클릭합니다.
 
@@ -211,7 +211,7 @@ Retail Recommendations AI 또는 Retail Search API를 사용하기 전에 Retail
 
 10. 가져오기 작업이 성공적으로 예약되었다는 팝업을 닫으려면 **X**를 클릭합니다.
 
-11. Search for Retail 탐색 메뉴에서 **데이터**를 클릭한 다음 **활동 상태**를 클릭하여 가져오기 작업의 진행 상황을 모니터링합니다.
+11. Search for Commerce 탐색 메뉴에서 **데이터**를 클릭한 다음 **활동 상태**를 클릭하여 가져오기 작업의 진행 상황을 모니터링합니다.
 
     가져오기 작업은 사용자 이벤트 가져오기 활동 섹션의 가져오기 작업 상태가 **성공**으로 변경되는 데 1~2분이 걸립니다. 약 32,000개의 항목이 가져오고 5개의 항목이 실패합니다.
 
@@ -219,7 +219,7 @@ Retail Recommendations AI 또는 Retail Search API를 사용하기 전에 Retail
 
 이 작업에서는 데이터 가져오기 작업을 검토하고 잘못된 데이터가 발견되었을 때 가져오기 작업에서 기록한 일부 오류를 살펴봅니다.
 
-1.  Search for Retail 탐색 메뉴에서 **데이터**를 클릭한 다음 **활동 상태**를 클릭하여 가져오기 작업의 진행 상황을 모니터링합니다.
+1.  Search for Commerce 탐색 메뉴에서 **데이터**를 클릭한 다음 **활동 상태**를 클릭하여 가져오기 작업의 진행 상황을 모니터링합니다.
 
 2.  **사용자 이벤트** 탭을 클릭한 다음 세부 정보 열에서 **전체 오류 로그 보기**를 클릭하여 오류를 검토합니다.
 
@@ -261,7 +261,7 @@ Retail Recommendations AI 또는 Retail Search API를 사용하기 전에 Retail
 
 이 작업에서는 가져온 제품 및 이벤트 데이터를 검토합니다.
 
-1.  Search for Retail 탐색 메뉴에서 **데이터**를 클릭한 다음 **카탈로그** 탭이 선택되어 있는지 확인합니다.
+1.  Search for Commerce 탐색 메뉴에서 **데이터**를 클릭한 다음 **카탈로그** 탭이 선택되어 있는지 확인합니다.
 
 2.  **브랜치 이름**은 **브랜치 0 (기본값)**으로 설정된 상태로 둡니다.
 
@@ -273,7 +273,7 @@ Retail Recommendations AI 또는 Retail Search API를 사용하기 전에 Retail
 
 4.  **링크 아이콘**을 클릭하여 링크를 열어봅니다. 열린 페이지에는 "죄송합니다. 이 페이지를 사용할 수 없습니다."라고 표시됩니다.
 
-5.  열린 제품 탭을 닫고 Search for Retail 데이터 페이지로 돌아갑니다.
+5.  열린 제품 탭을 닫고 Search for Commerce 데이터 페이지로 돌아갑니다.
 
 6.  **필터**에 `GGOECAEB163612`를 입력합니다.
 
@@ -281,7 +281,7 @@ Retail Recommendations AI 또는 Retail Search API를 사용하기 전에 Retail
 
 7.  **링크 아이콘**을 클릭하여 링크를 엽니다. Google Merchandise 스토어의 제품 페이지가 열립니다.
 
-8.  열린 제품 탭을 닫고 Search for Retail 데이터 페이지로 돌아갑니다.
+8.  열린 제품 탭을 닫고 Search for Commerce 데이터 페이지로 돌아갑니다.
 
 ## 작업 5. Retail API를 사용하여 사용자 이벤트 데이터 업로드
 

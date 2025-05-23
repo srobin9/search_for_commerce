@@ -1,7 +1,6 @@
 # GitHub의 제품 및 이벤트 JSON 데이터를 BigQuery 및 GCS로 업로드 가이드
 
-이 문서는 GitHub에 저장된 `retail_products.json` (제품 카탈로그) 파일을 Google BigQuery의 `retail.products` 테이블로 로드하고, `recent_retail_events.json` (사용자 이벤트) 파일을 처리하여 Google Cloud Storage(GCS)에 업로드하는 방법을 안내합니다. GCS에 업로드된 이벤트 데이터는 Vertex AI Search for Retail(구 Search for Commerce)에서 직접 사용될 수 있습니다.
-
+이 문서는 GitHub에 저장된 `retail_products.json` (제품 카탈로그) 파일을 Google BigQuery의 `retail.products` 테이블로 로드하고, `recent_retail_events.json` (사용자 이벤트) 파일을 처리하여 Google Cloud Storage(GCS)에 업로드하는 방법을 안내합니다. 해당 데이터들은 Search for Commerce에서 사용하기 위한 샘플 데이터 들입니다. 
 ## 목차
 
 1.  [사전 준비 사항](#1-사전-준비-사항)

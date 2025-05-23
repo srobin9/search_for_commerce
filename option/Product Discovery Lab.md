@@ -2,20 +2,20 @@
 
 ## 개요
 
-Cloud Retail 서비스와 Retail API를 사용하면 고객이 머신러닝, 추천 시스템 또는 Google Cloud에 대한 높은 수준의 전문 지식 없이도 엔드투엔드 개인 맞춤형 추천 시스템을 구축할 수 있습니다. Retail API 제품 추천 및 제품 검색 서비스를 사용하려면 제품 카탈로그 데이터와 해당 카탈로그와 관련된 사용자 이벤트 데이터를 생성하거나 가져와야 합니다.
+Cloud Retail 서비스와 Retail API를 사용하면 고객이 머신러닝, 추천 시스템 또는 Google Cloud에 대한 높은 수준의 전문 지식 없이도 엔드투엔드 개인 맞춤형 추천 시스템을 구축할 수 있습니다. Retail API 제품 추천 및 제품 검색 서비스를 사용하려면 Product Catalog 데이터와 해당 카탈로그와 관련된 사용자 이벤트 데이터를 생성하거나 가져와야 합니다.
 
-이 실습에서는 다양한 기술을 사용하여 제품 카탈로그 및 사용자 이벤트 데이터를 업로드하여 Retail Recommendations AI 및 Product Search 서비스를 위한 환경을 준비합니다. 몇 가지 일반적인 데이터 수집 오류를 살펴보고 Cloud Console 및 Retail API를 사용하여 소매 카탈로그 및 이벤트 데이터를 검토합니다.
+이 실습에서는 다양한 기술을 사용하여 Product Catalog 및 사용자 이벤트 데이터를 업로드하여 Retail Recommendations AI 및 Product Search 서비스를 위한 환경을 준비합니다. 몇 가지 일반적인 데이터 수집 오류를 살펴보고 Cloud Console 및 Retail API를 사용하여 소매 카탈로그 및 이벤트 데이터를 검토합니다.
 
-이 실습에서는 제품 카탈로그에 Google Merchant Center 데이터 세트의 하위 집합을 사용합니다. Google Merchant Center에서 직접 내보낸 데이터는 Retail 데이터 수집 API와 호환되지 않는 스키마를 사용하므로 실습에 사용된 데이터 세트는 Retail 스키마를 따르도록 수정되었습니다.
+이 실습에서는 Product Catalog에 Google Merchant Center 데이터 세트의 하위 집합을 사용합니다. Google Merchant Center에서 직접 내보낸 데이터는 Retail 데이터 수집 API와 호환되지 않는 스키마를 사용하므로 실습에 사용된 데이터 세트는 Retail 스키마를 따르도록 수정되었습니다.
 
 ## 목표
 
 이 실습에서는 다음 작업을 완료하는 방법을 배웁니다.
 
 *   Retail API를 활성화합니다.
-*   BigQuery 및 Cloud Storage에서 제품 카탈로그 및 사용자 이벤트 데이터를 가져옵니다.
+*   BigQuery 및 Cloud Storage에서 Product Catalog 및 사용자 이벤트 데이터를 가져옵니다.
 *   데이터 가져오기 이벤트 및 오류를 검토합니다.
-*   제품 카탈로그 및 사용자 이벤트 데이터를 검토합니다.
+*   Product Catalog 및 사용자 이벤트 데이터를 검토합니다.
 *   Retail API를 사용하여 사용자 이벤트 데이터를 업로드합니다.
 
 ## 설정 및 요구사항
@@ -49,7 +49,7 @@ Google Cloud에 있는 동안 자체 컴퓨터에서 Google Cloud를 원격으�
 1.  Cloud Console에서 **Cloud Shell 활성화**를 클릭합니다.
     (Cloud Shell 활성화 아이콘 강조 표시됨)
 
-    **참고:** Cloud Shell을 처음 시작하는 경우 Cloud Shell이 무엇인지 설명하는 중간 화면이 표시됩니다. 이 경우 **계속**을 클릭하면 다시 표시되지 않습니다.
+    **참고:** Cloud Shell을 처음 시작하는 경우 Cloud Shell이 무엇인지 설명하는 중간 화면이 표시됩니다. 이 경우 **CONTINUE**을 클릭하면 다시 표시되지 않습니다.
     다음은 일회성 화면의 모습입니다.
 
     (Cloud Shell 대화 상자)
@@ -96,65 +96,58 @@ Google Cloud에 있는 동안 자체 컴퓨터에서 Google Cloud를 원격으�
     Updated property [core/project].
     ```
 
-## 작업 1. Retail API 활성화
+## 작업 1. Vertex AI Serarch for Commerce 활성화
 
-Retail Recommendations AI 또는 Retail Search API를 사용하기 전에 Retail API를 활성화해야 합니다.
+Search for Commerce를 사용하기 위해 활성화해야 합니다.
 
-1.  **탐색 메뉴**(탐색 메뉴 아이콘)에서 인공 지능 섹션 아래 **모든 제품 보기**를 클릭하고 **Search for Commerce**를 선택합니다.
+1.  **탐색 메뉴**(탐색 메뉴 아이콘) 하단의 **View all products**를 클릭하고 Artificial Intlligence 섹션의  **Search for Commerce**를 선택합니다.
 
-2.  **API 켜기**를 클릭합니다.
+2.  **Turn on Vertex AI Search for Commerce**애서 **TURN ON API**를 클릭합니다.
 
-3.  **계속**을 클릭하고 **동의**를 클릭하여 데이터 약관에 동의합니다.
+3.  **CONTINUE**을 클릭하고 **ACCEPT**를 클릭하여 데이터 약관에 동의합니다.
 
-4.  **시작하기**를 클릭합니다.
+4.  **CONTINUE**을 클릭하고 **TURN ON**을 클릭하여 검색 및 탐색 기능을 켭니다.
 
-## 작업 2. 제품 카탈로그 및 사용자 이벤트 데이터 가져오기
+5.  **시작하기**를 클릭합니다.
 
-이 작업에서는 BigQuery에서 제품 카탈로그 데이터를, Cloud Storage에서 사용자 이벤트 데이터를 가져옵니다.
+## 작업 2. Product Catalog 및 사용자 이벤트 데이터 가져오기
+
+이 작업에서는 BigQuery에서 Product Catalog 데이터를, Cloud Storage에서 사용자 이벤트 데이터를 가져옵니다.
 
 ### BigQuery에서 Merchant Center 제품 테이블 스키마 데이터 가져오기
 
-`merchant_center.products` 테이블에는 Google Merchant Center 제품 테이블 스키마를 사용하여 Google Merchant Center의 테스트 계정에서 내보낸 카탈로그 데이터가 포함되어 있습니다. 이 데이터 세트는 이전 Recommendations AI Console 또는 API를 사용하여 카탈로그 데이터로 가져올 수 있습니다. Recommendations AI API를 대체하는 Retail API는 현재 Merchant Center 제품 테이블 스키마를 사용하는 데이터 가져오기를 지원하지 않으며 모든 데이터 가져오기는 Retail 스키마를 사용해야 합니다. 데이터 가져오기 오류를 검사하는 방법을 확인하기 위해 Retail API를 사용하여 이 데이터를 계속 가져오려고 시도합니다.
+`merchant_center.products` 테이블에는 Google Merchant Center 제품 테이블 스키마를 사용하여 Google Merchant Center의 테스트 계정에서 내보낸 카탈로그 데이터가 포함되어 있습니다. 데이터 가져오기 오류를 검사하는 방법을 확인하기 위해 Retail API를 사용하여 이 데이터를 계속 가져오려고 시도합니다.
 
-1.  GCP Console에서 **Search for Commerce > 데이터**를 클릭하여 Retail 데이터 관리 페이지를 엽니다.
+1.  GCP Console에서 **Search for Commerce > Data**를 클릭하여 Search for Commerce 데이터 관리 페이지를 엽니다.
 
-2.  **카탈로그** 탭이 선택되어 있는지 확인하고 **가져오기**를 클릭합니다.
+2.  **Catalog** 탭이 선택되어 있는지 확인하고 **IMPORT**를 클릭합니다.
 
-3.  제품 카탈로그를 가져오도록 가져오기 매개변수를 다음과 같이 구성합니다.
+3.  Product Catalog를 가져오도록 가져오기 매개변수를 다음과 같이 구성합니다.
 
-    *   **가져오기 유형**으로 **제품 카탈로그**를 선택합니다.
-    *   **데이터 소스**로 **BigQuery**를 선택합니다.
-    *   **가져오기 브랜치**로 **브랜치 0**을 선택합니다.
-    *   **BigQuery 테이블**에서 **찾아보기**를 클릭합니다.
+    *   **Import type**으로 **Product Catalog**를 선택합니다.
+    *   **Source of data**로 **BigQuery**를 선택합니다.
+    *   **Import branch**에서 **Branch 0**을 선택합니다.
+    *   **Schema of data**에서 **Retail Product Catalogs Schema**를 선택합니다.  
+    *   **BigQuery 테이블**에서 **BROWSE**를 클릭합니다.
 
-4.  검색창에 `products`를 입력하고 **검색**을 클릭합니다.
+4.  검색창에 `products`를 입력하고 **SEARCH**을 클릭합니다.
 
 5.  `products - Dataset: merchant_center table`의 라디오 버튼을 선택합니다.
 
-    소스 테이블에 `id` 필드가 없어 진행할 수 없습니다.
+6.  **SELECT**을 클릭합니다.
 
-    스키마 때문에 데이터에 훨씬 더 많은 문제가 있습니다.
+    소스 테이블에 `id` 필드가 없어 진행할 수 없습니다. 스키마가 맞지 않기 때문에 데이터를 가져 올 수 없습니다.
 
-### BigQuery에서 Retail 제품 스키마 데이터 가져오기
+7.  Data Schema를 변경하여 데이터 가져오기를 다시 수행합니다. 
 
-이 작업에서는 Retail 제품 스키마를 사용하는 BigQuery 테이블에서 카탈로그로 제품 데이터를 가져옵니다.
+    *   **Schema of data**에서 **Merchant Center**를 선택합니다.  
+    *   **BigQuery 테이블**에서 **BROWSE**를 클릭합니다.
 
-1.  GCP Console의 **탐색 메뉴**(탐색 메뉴 아이콘)에서 인공 지능 섹션 아래 **모든 제품 보기**를 클릭하고 **Search for Commerce > 데이터**를 선택하여 Retail 데이터 관리 페이지를 엽니다.
+4.  검색창에 `products`를 입력하고 **SEARCH**을 클릭합니다.
 
-2.  **카탈로그** 탭이 선택되어 있는지 확인하고 **가져오기**를 클릭합니다.
+5.  `products - Dataset: merchant_center table`의 라디오 버튼을 선택합니다.
 
-3.  제품 카탈로그를 가져오도록 가져오기 매개변수를 다음과 같이 구성합니다.
-
-    *   **가져오기 유형**으로 **제품 카탈로그**를 선택합니다.
-    *   **가져오기 브랜치**로 **브랜치 0**을 선택합니다.
-    *   **데이터 소스**로 **BigQuery**를 선택합니다.
-    *   **BigQuery 테이블**에서 **찾아보기**를 클릭합니다.
-
-4.  검색창에 `products`를 입력하고 **검색**을 클릭합니다.
-
-5.  `products - Dataset: retail table`의 라디오 버튼을 선택합니다.
-
-6.  **선택**을 클릭합니다.
+6.  **SELECT**을 클릭합니다.
 
     **참고:** 테이블 이름을 클릭하면 데이터 카탈로그 페이지가 열리므로 Retail 제품 가져오기 페이지로 돌아가야 합니다.
 7.  **가져오기**를 클릭합니다.
@@ -171,7 +164,46 @@ Retail Recommendations AI 또는 Retail Search API를 사용하기 전에 Retail
 
 10. Search for Commerce 탐색 메뉴에서 **데이터**를 클릭한 다음 **활동 상태**를 클릭하여 가져오기 작업의 진행 상황을 모니터링합니다.
 
-    가져오기 작업은 제품 카탈로그 가져오기 활동 섹션의 가져오기 작업 상태가 **성공**으로 변경되는 데 1~2분이 걸립니다. 총 1268개의 항목이 가져옵니다.
+    가져오기 작업은 Product Catalog 가져오기 활동 섹션의 가져오기 작업 상태가 **성공**으로 변경되는 데 1~2분이 걸립니다. 총 1268개의 항목이 가져옵니다.
+
+
+### BigQuery에서 Retail 제품 스키마 데이터 가져오기
+
+이 작업에서는 Retail 제품 스키마를 사용하는 BigQuery 테이블에서 카탈로그로 제품 데이터를 가져옵니다.
+
+1.  GCP Console의 **탐색 메뉴**(탐색 메뉴 아이콘)에서 인공 지능 섹션 아래 **모든 제품 보기**를 클릭하고 **Search for Commerce > Data**를 선택하여 Retail 데이터 관리 페이지를 엽니다.
+
+2.  **카탈로그** 탭이 선택되어 있는지 확인하고 **가져오기**를 클릭합니다.
+
+3.  Product Catalog를 가져오도록 가져오기 매개변수를 다음과 같이 구성합니다.
+
+    *   **Import type**으로 **Product Catalog**를 선택합니다.
+    *   **Import branch**에서 **Branch 0**을 선택합니다.
+    *   **Source of data**로 **BigQuery**를 선택합니다.
+    *   **BigQuery 테이블**에서 **BROWSE**를 클릭합니다.
+
+4.  검색창에 `products`를 입력하고 **SEARCH**을 클릭합니다.
+
+5.  `products - Dataset: retail table`의 라디오 버튼을 선택합니다.
+
+6.  **SELECT**을 클릭합니다.
+
+    **참고:** 테이블 이름을 클릭하면 데이터 카탈로그 페이지가 열리므로 Retail 제품 가져오기 페이지로 돌아가야 합니다.
+7.  **가져오기**를 클릭합니다.
+    다음과 유사한 메시지가 포함된 팝업 메시지가 나타날 때까지 기다려야 합니다.
+
+    (샘플 소매 카탈로그 가져오기 팝업)
+    `Successfully scheduled import operation import-products-6583047802807380211. It may take up to 5 minutes to see your new long running operation in the Integration Activity panel.` (가져오기 작업 import-products-6583047802807380211이 성공적으로 예약되었습니다. 통합 활동 패널에 새 장기 실행 작업이 표시되는 데 최대 5분이 걸릴 수 있습니다.)
+
+    가져오기 작업이 예약되면 정기적인 데이터 가져오기 작업을 예약하는 데 사용할 수 있는 `gcloud scheduler` 명령의 세부 정보도 표시됩니다.
+
+8.  **취소**를 클릭하여 가져오기 페이지를 닫고 Retail 데이터 페이지로 돌아가 카탈로그 데이터 가져오기 작업의 상태를 확인합니다.
+
+9.  가져오기 작업이 성공적으로 예약되었다는 팝업을 닫으려면 **X**를 클릭합니다.
+
+10. Search for Commerce 탐색 메뉴에서 **데이터**를 클릭한 다음 **활동 상태**를 클릭하여 가져오기 작업의 진행 상황을 모니터링합니다.
+
+    가져오기 작업은 Product Catalog 가져오기 활동 섹션의 가져오기 작업 상태가 **성공**으로 변경되는 데 1~2분이 걸립니다. 총 1268개의 항목이 가져옵니다.
 
 ### Cloud Storage에서 사용자 이벤트 데이터 가져오기
 
@@ -181,17 +213,17 @@ Retail Recommendations AI 또는 Retail Search API를 사용하기 전에 Retail
 
 2.  **이벤트** 탭이 선택되어 있는지 확인하고 **가져오기**를 클릭합니다.
 
-3.  제품 카탈로그를 가져오도록 가져오기 매개변수를 다음과 같이 구성합니다.
+3.  Product Catalog를 가져오도록 가져오기 매개변수를 다음과 같이 구성합니다.
 
-    *   **가져오기 유형**으로 **사용자 이벤트**를 선택합니다.
-    *   **데이터 소스**로 **Google Cloud Storage**를 선택합니다.
-    *   **Google Cloud Storage 위치**에서 **찾아보기** 버튼을 클릭합니다.
+    *   **Import type**으로 **사용자 이벤트**를 선택합니다.
+    *   **Source of data**로 **Google Cloud Storage**를 선택합니다.
+    *   **Google Cloud Storage 위치**에서 **BROWSE** 버튼을 클릭합니다.
 
 4.  `bucket_name`이라는 스토리지 버킷으로 이동하여 `recent_retail_events.json` 파일을 선택합니다.
 
 5.  파일 이름이 선택되었는지 확인하려면 **파일 이름**을 클릭합니다.
 
-6.  **선택**을 클릭합니다.
+6.  **SELECT**을 클릭합니다.
 
 7.  **가져오기**를 클릭합니다.
 
@@ -254,13 +286,13 @@ Retail Recommendations AI 또는 Retail Search API를 사용하기 전에 Retail
 
 6.  Retail 활동 상태 탭을 열고 **닫기**를 클릭하여 활동 상태 팝아웃을 닫습니다.
 
-## 작업 4. 제품 카탈로그 및 사용자 이벤트 데이터 검토
+## 작업 4. Product Catalog 및 사용자 이벤트 데이터 검토
 
 이 작업에서는 가져온 제품 및 이벤트 데이터를 검토합니다.
 
 1.  Search for Commerce 탐색 메뉴에서 **데이터**를 클릭한 다음 **카탈로그** 탭이 선택되어 있는지 확인합니다.
 
-2.  **브랜치 이름**은 **브랜치 0 (기본값)**으로 설정된 상태로 둡니다.
+2.  **Branch 이름**은 **Branch 0 (기본값)**으로 설정된 상태로 둡니다.
 
     카탈로그 제품 목록에는 카탈로그에 업로드된 1268개의 제품 레코드가 표시되며 그중 746개가 재고 있음 상태입니다.
 
@@ -424,7 +456,7 @@ JSON 형식의 사용자 이벤트 데이터를 Retail API `userEvents:write` �
 
 ## 축하합니다!
 
-축하합니다. 다양한 기술을 사용하여 Retail 제품 카탈로그 및 사용자 이벤트 데이터를 성공적으로 가져왔고, 몇 가지 일반적인 데이터 수집 오류를 살펴보고, Cloud Console 및 Retail API를 사용하여 Retail 카탈로그 및 이벤트 데이터를 검토했습니다.
+축하합니다. 다양한 기술을 사용하여 Retail Product Catalog 및 사용자 이벤트 데이터를 성공적으로 가져왔고, 몇 가지 일반적인 데이터 수집 오류를 살펴보고, Cloud Console 및 Retail API를 사용하여 Retail 카탈로그 및 이벤트 데이터를 검토했습니다.
 
 ## 실습 종료
 

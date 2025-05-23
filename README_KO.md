@@ -1,6 +1,6 @@
-# GitHub의 제품 및 이벤트 JSON 데이터를 BigQuery로 업로드 가이드
+# GitHub의 제품 및 이벤트 JSON 데이터를 BigQuery 및 GCS로 업로드 가이드
 
-이 문서는 GitHub에 저장된 `retail_products.json` (제품 카탈로그) 파일과 `recent_retail_events.json` (사용자 이벤트) 파일을 처리하여 Google BigQuery의 `retail` 데이터 세트 내에 각각 테이블로 로드하는 방법을 안내합니다.
+이 문서는 GitHub에 저장된 `retail_products.json` (제품 카탈로그) 파일을 Google BigQuery의 `retail.products` 테이블로 로드하고, `recent_retail_events.json` (사용자 이벤트) 파일을 처리하여 Google Cloud Storage(GCS)에 업로드하는 방법을 안내합니다. GCS에 업로드된 이벤트 데이터는 Vertex AI Search for Retail(구 Search for Commerce)에서 직접 사용될 수 있습니다.
 
 ## 목차
 
@@ -10,8 +10,8 @@
 4.  [GitHub에서 필요 파일 다운로드](#4-github에서-필요-파일-다운로드)
 5.  [이벤트 데이터 처리 및 GCS 업로드 (`update_event_time.py` 사용)](#5-이벤트-데이터-처리-및-gcs-업로드-update_event_timepy-사용)
 6.  [GCS에 업로드된 이벤트 데이터 검증](#6-gcs에-업로드된-이벤트-데이터-검증)
-7.  [BigQuery 테이블로 데이터 로드](#7-bigquery-테이블로-데이터-로드)
-8.  [데이터 업로드 확인](#8-데이터-업로드-확인)
+7.  [BigQuery `retail.products` 테이블로 제품 카탈로그 데이터 로드](#7-bigquery-retailproducts-테이블로-제품-카탈로그-데이터-로드)
+8.  [BigQuery 제품 데이터 업로드 확인](#8-bigquery-제품-데이터-업로드-확인)
 9.  [중요 참고 사항](#9-중요-참고-사항)
 
 ## 1. 사전 준비 사항
@@ -39,7 +39,8 @@ export GCP_PROJECT_ID="[YOUR_PROJECT_ID]"
 ```
 터미널 세션 동안 유지됩니다. 영구적으로 설정하려면 셸 설정 파일(예: `.bashrc`, `.zshrc`)에 추가하세요.
 
-**Windows (Command Prompt):**```bash
+**Windows (Command Prompt):**
+```bash
 set GCP_PROJECT_ID=[YOUR_PROJECT_ID]
 ```
 현재 Command Prompt 세션 동안 유지됩니다.
@@ -54,7 +55,7 @@ $env:GCP_PROJECT_ID="[YOUR_PROJECT_ID]"
 
 ## 3. (선택 사항) `retail` BigQuery 데이터 세트 생성
 
-데이터를 로드할 `retail` 데이터 세트가 아직 없다면 다음 명령어를 사용하여 생성합니다. 명령어는 위에서 설정한 `$GCP_PROJECT_ID` (또는 Windows의 경우 `%GCP_PROJECT_ID%`) 환경 변수를 사용합니다.
+제품 카탈로그 데이터를 로드할 `retail` 데이터 세트가 아직 없다면 다음 명령어를 사용하여 생성합니다. 명령어는 위에서 설정한 `$GCP_PROJECT_ID` (또는 Windows의 경우 `%GCP_PROJECT_ID%`) 환경 변수를 사용합니다.
 
 *   `retail` 데이터 세트 생성:
     ```bash
@@ -66,12 +67,15 @@ $env:GCP_PROJECT_ID="[YOUR_PROJECT_ID]"
 
 ## 4. GitHub에서 필요 파일 다운로드
 
-다음 명령어를 사용하여 GitHub 저장소에서 필요한 JSON 파일들과 Python 스크립트를 로컬 환경으로 다운로드합니다.
+다음 명령어를 사용하여 GitHub 저장소에서 필요한 JSON 파일들, 스키마 파일 및 Python 스크립트를 로컬 환경으로 다운로드합니다.
 `[YOUR_GITHUB_USERNAME]`, `[YOUR_REPOSITORY_NAME]`, `[BRANCH_NAME]`을 실제 GitHub 사용자 이름, 저장소 이름, 브랜치 이름으로 변경하세요. 일반적으로 브랜치 이름은 `main` 또는 `master`입니다.
 
 ```bash
 # 제품 카탈로그 데이터 다운로드
 curl -L -o retail_products.json https://raw.githubusercontent.com/[YOUR_GITHUB_USERNAME]/[YOUR_REPOSITORY_NAME]/[BRANCH_NAME]/retail_products.json
+
+# 제품 카탈로그 스키마 파일 다운로드
+curl -L -o retail_products_schema.json https://raw.githubusercontent.com/[YOUR_GITHUB_USERNAME]/[YOUR_REPOSITORY_NAME]/[BRANCH_NAME]/retail_products_schema.json
 
 # 사용자 이벤트 데이터 원본 파일 다운로드
 curl -L -o recent_retail_events.json https://raw.githubusercontent.com/[YOUR_GITHUB_USERNAME]/[YOUR_REPOSITORY_NAME]/[BRANCH_NAME]/recent_retail_events.json
@@ -83,7 +87,7 @@ curl -L -o update_event_time.py https://raw.githubusercontent.com/[YOUR_GITHUB_U
 
 ## 5. 이벤트 데이터 처리 및 GCS 업로드 (`update_event_time.py` 사용)
 
-다운로드한 `recent_retail_events.json` 파일의 `eventTime`을 수정하고 Google Cloud Storage(GCS)에 업로드하기 위해 `update_event_time.py` Python 스크립트를 사용합니다. 이 스크립트는 각 JSON 라인의 `eventTime` 필드를 최근 33일 동안 선형적으로 분포하도록 수정하고, 시간 부분을 무작위화합니다.
+다운로드한 `recent_retail_events.json` 파일의 `eventTime`을 수정하고 Google Cloud Storage(GCS)에 업로드하기 위해 `update_event_time.py` Python 스크립트를 사용합니다. 이 스크립트는 각 JSON 라인의 `eventTime` 필드를 최근 33일 동안 선형적으로 분포하도록 수정하고, 시간 부분을 무작위화합니다. 이렇게 처리된 이벤트 데이터는 GCS에 저장되어 Vertex AI Search for Retail 서비스에서 직접 사용됩니다.
 
 **스크립트 실행을 위한 사전 준비 사항:**
 *   Python 3
@@ -115,7 +119,7 @@ curl -L -o update_event_time.py https://raw.githubusercontent.com/[YOUR_GITHUB_U
 ```bash
 python3 update_event_time.py
 ```
-스크립트 실행 후, 처리된 `recent_retail_events.json` 파일은 지정된 GCS 위치에 업로드됩니다.
+스크립트 실행 후, 처리된 `recent_retail_events.json` 파일은 지정된 GCS 위치에 업로드됩니다. 이 파일은 Vertex AI Search for Retail에서 사용될 준비가 된 것입니다.
 
 ## 6. GCS에 업로드된 이벤트 데이터 검증
 
@@ -133,7 +137,7 @@ python3 update_event_time.py
         TEMP_GCS_PATH="gs://$TEMP_GCS_PATH"
     fi
 
-    # 경로 마지막에 슬래시 추가 (없는 경우)
+    # 경로 마지막에 슬래시 추가 (없는 경우) 및 파일명 결합
     if [[ "${TEMP_GCS_PATH: -1}" != "/" ]]; then
         PROCESSED_EVENT_FILE_GCS_URI="${TEMP_GCS_PATH}/recent_retail_events.json"
     else
@@ -158,51 +162,43 @@ python3 update_event_time.py
     rm ./downloaded_events_check.json # 확인 후 삭제
     ```
 
-데이터가 예상대로 수정되었다면 다음 단계로 진행합니다.
+데이터가 예상대로 수정되었다면 Vertex AI Search for Retail에서 사용할 준비가 된 것입니다.
 
-## 7. BigQuery 테이블로 데이터 로드
+## 7. BigQuery `retail.products` 테이블로 제품 카탈로그 데이터 로드
 
-다운로드한 제품 카탈로그 데이터와 GCS에 업로드된 처리된 이벤트 데이터를 사용하여 BigQuery 테이블에 로드합니다. 명령어는 설정된 `$GCP_PROJECT_ID` 환경 변수를 사용합니다.
+다운로드한 제품 카탈로그 데이터 (`retail_products.json`)와 해당 스키마 파일 (`retail_products_schema.json`)을 사용하여 BigQuery `retail.products` 테이블에 로드합니다. 명령어는 설정된 `$GCP_PROJECT_ID` 환경 변수를 사용합니다.
 
 *   **제품 카탈로그 데이터 로드 (`retail_products.json`):**
-    로컬에 다운로드된 `retail_products.json` 파일을 `retail.products` 테이블로 로드합니다.
     ```bash
     bq load --project_id=$GCP_PROJECT_ID \
       --source_format=NEWLINE_DELIMITED_JSON \
-      --autodetect \
+      --schema=./retail_products_schema.json \
       retail.products \
       ./retail_products.json
-    ```
+    ```    (Windows Command Prompt에서는 `$GCP_PROJECT_ID` 대신 `%GCP_PROJECT_ID%`를 사용하고, 파일 경로를 적절히 수정하세요.)
 
 **참고:**
 *   `--source_format=NEWLINE_DELIMITED_JSON`: JSON 파일이 줄 바꿈으로 구분된 JSON (NDJSON) 형식임을 나타냅니다.
-*   `--autodetect`: BigQuery가 데이터의 스키마를 자동으로 추론하도록 합니다. 프로덕션 환경이나 특정 데이터 타입 및 모드(예: REQUIRED, NULLABLE)가 중요한 경우에는 명시적 스키마 정의 (JSON 스키마 파일과 함께 `--schema` 플래그 사용)가 더 안정적입니다.
+*   `--schema=./retail_products_schema.json`: BigQuery가 테이블 스키마를 정의하기 위해 사용할 로컬 스키마 파일을 지정합니다.
 
-## 8. 데이터 업로드 확인
+## 8. BigQuery 제품 데이터 업로드 확인
 
-데이터가 테이블에 성공적으로 로드되었는지 확인하려면 다음 `bq` 명령어를 사용하거나 Google Cloud Console의 BigQuery UI에서 직접 쿼리할 수 있습니다.
+`retail.products` 테이블에 데이터가 성공적으로 로드되었는지 확인하려면 다음 `bq` 명령어를 사용하거나 Google Cloud Console의 BigQuery UI에서 직접 쿼리할 수 있습니다.
 
 *   `retail.products` 테이블의 처음 5개 행 확인:
     ```bash
     bq head -n 5 $GCP_PROJECT_ID:retail.products
     ```
-*   `retail.user_events` 테이블의 처음 5개 행 확인:
-    ```bash
-    bq head -n 5 $GCP_PROJECT_ID:retail.user_events
-    ```
 
-*   각 테이블의 총 행 수 확인 (SQL 쿼리):
+*   `retail.products` 테이블의 총 행 수 확인 (SQL 쿼리):
     ```bash
     bq query --project_id=$GCP_PROJECT_ID --use_legacy_sql=false \
     "SELECT COUNT(*) FROM \`$GCP_PROJECT_ID.retail.products\`"
-
-    bq query --project_id=$GCP_PROJECT_ID --use_legacy_sql=false \
-    "SELECT COUNT(*) FROM \`$GCP_PROJECT_ID.retail.user_events\`"
     ```
-    (Windows Command Prompt에서는 `$GCP_PROJECT_ID` 대신 `%GCP_PROJECT_ID%`를 사용하세요. SQL 쿼리 문자열 내의 `$GCP_PROJECT_ID`는 셸에 의해 확장되어야 하므로, 쿼리 문자열을 작은따옴표(') 대신 큰따옴표(")로 감싸는 것이 중요합니다. 만약 작은따옴표를 사용해야 한다면, 변수를 문자열 밖에 두거나 문자열 연결을 사용해야 합니다.)
+    (Windows Command Prompt에서는 `$GCP_PROJECT_ID` 대신 `%GCP_PROJECT_ID%`를 사용하세요. SQL 쿼리 문자열 내의 `$GCP_PROJECT_ID`는 셸에 의해 확장되어야 하므로, 쿼리 문자열을 작은따옴표(') 대신 큰따옴표(")로 감싸는 것이 중요합니다.)
 
 ## 9. 중요 참고 사항
 
 *   **JSON 파일 형식**: BigQuery는 **줄 바꿈으로 구분된 JSON (NDJSON)** 형식의 파일을 예상합니다. 각 JSON 객체는 파일의 개별 줄에 있어야 합니다.
-*   **오류 처리**: 로드 중 오류 발생 시 `bq` 명령어 출력 메시지를 확인하고, `bq ls -j --project_id=$GCP_PROJECT_ID` 및 `bq show -j --project_id=$GCP_PROJECT_ID [JOB_ID]`로 세부 정보를 확인하세요.
-*   **스키마 관리**: `--autodetect`는 편리하지만, 데이터 타입이나 필드 모드(NULLABLE, REQUIRED 등)를 정확하게 제어해야 하는 프로덕션 환경에서는 JSON 스키마 파일을 직접 정의하여 `--schema` 플래그와 함께 사용하는 것이 좋습니다.
+*   **오류 처리**: `bq load` 작업 중 오류 발생 시 명령어 출력 메시지를 확인하고, `bq ls -j --project_id=$GCP_PROJECT_ID` 및 `bq show -j --project_id=$GCP_PROJECT_ID [JOB_ID]`로 세부 정보를 확인하세요.
+*   **스키마 관리**: 이 가이드에서는 제품 카탈로그에 대해 명시적 스키마 파일(`retail_products_schema.json`) 사용을 권장합니다. 이는 데이터 타입 및 필드 모드(NULLABLE, REQUIRED 등)를 정확하게 제어하여 데이터 일관성을 보장하는 데 도움이 됩니다.

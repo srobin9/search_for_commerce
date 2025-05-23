@@ -5,11 +5,12 @@ This document guides you through loading `merchant_center_products.json` and `re
 ## Table of Contents
 
 1.  [Prerequisites](#1-prerequisites)
-2.  [(Optional) Create BigQuery Datasets](#2-optional-create-bigquery-datasets)
-3.  [Download Data Files from GitHub](#3-download-data-files-from-github)
-4.  [Load Data into BigQuery Tables](#4-load-data-into-bigquery-tables)
-5.  [Verify Data Upload](#5-verify-data-upload)
-6.  [Important Notes](#6-important-notes)
+2.  [Set Google Cloud Project ID Environment Variable](#2-set-google-cloud-project-id-environment-variable)
+3.  [(Optional) Create BigQuery Datasets](#3-optional-create-bigquery-datasets)
+4.  [Download Data Files from GitHub](#4-download-data-files-from-github)
+5.  [Load Data into BigQuery Tables](#5-load-data-into-bigquery-tables)
+6.  [Verify Data Upload](#6-verify-data-upload)
+7.  [Important Notes](#7-important-notes)
 
 ## 1. Prerequisites
 
@@ -21,25 +22,52 @@ Before using the `bq` and `gcloud` command-line tools, ensure you have completed
     gcloud init
     gcloud auth application-default login
     ```
-*   **Set Project**: Replace `[YOUR_PROJECT_ID]` with your actual Google Cloud project ID.
+*   **Set Default Project (for gcloud)**: Set the default project for `gcloud` commands. The `bq` commands in this README will use the environment variable set in the next step. Replace `[YOUR_PROJECT_ID]` with your actual Google Cloud project ID.
     ```bash
     gcloud config set project [YOUR_PROJECT_ID]
     ```
 
-## 2. (Optional) Create BigQuery Datasets
+## 2. Set Google Cloud Project ID Environment Variable
 
-If the `merchant_center` and `retail` datasets where you intend to load data do not already exist, create them using the following commands. Replace `[YOUR_PROJECT_ID]` with your actual project ID.
+Set an environment variable for the Google Cloud Project ID that will be used by the `bq` commands in this guide. Replace `[YOUR_PROJECT_ID]` with your actual project ID.
+
+**Linux / macOS:**
+```bash
+export GCP_PROJECT_ID="[YOUR_PROJECT_ID]"
+```
+This will last for the current terminal session. To make it permanent, add it to your shell's configuration file (e.g., `.bashrc`, `.zshrc`).
+
+**Windows (Command Prompt):**
+```bash
+set GCP_PROJECT_ID=[YOUR_PROJECT_ID]
+```
+This will last for the current Command Prompt session.
+
+**Windows (PowerShell):**
+```bash
+$env:GCP_PROJECT_ID="[YOUR_PROJECT_ID]"
+```
+This will last for the current PowerShell session.
+
+After setting, verify the environment variable is set correctly (e.g., `echo $GCP_PROJECT_ID` on Linux/macOS).
+
+## 3. (Optional) Create BigQuery Datasets
+
+If the `merchant_center` and `retail` datasets do not already exist, create them using the following commands. The commands will use the `$GCP_PROJECT_ID` (or `%GCP_PROJECT_ID%` on Windows) environment variable set above.
 
 *   Create `merchant_center` dataset:
     ```bash
-    bq --project_id=[YOUR_PROJECT_ID] mk --dataset merchant_center
-    ```*   Create `retail` dataset:
-    ```bash
-    bq --project_id=[YOUR_PROJECT_ID] mk --dataset retail
+    bq --project_id=$GCP_PROJECT_ID mk --dataset merchant_center
     ```
-    If the datasets already exist, you can skip this step. You can list your datasets using `bq ls`.
+*   Create `retail` dataset:
+    ```bash
+    bq --project_id=$GCP_PROJECT_ID mk --dataset retail
+    ```
+    (On Windows Command Prompt, use `%GCP_PROJECT_ID%` instead of `$GCP_PROJECT_ID`.)
 
-## 3. Download Data Files from GitHub
+    If the datasets already exist, you can skip this step. You can list your datasets using `bq --project_id=$GCP_PROJECT_ID ls`.
+
+## 4. Download Data Files from GitHub
 
 Use the following commands to download the JSON files from your GitHub repository to your local environment.
 Replace `[YOUR_GITHUB_USERNAME]`, `[YOUR_REPOSITORY_NAME]`, and `[BRANCH_NAME]` with your actual GitHub username, repository name, and branch name (commonly `main` or `master`).
@@ -53,15 +81,13 @@ curl -L -o retail_products.json https://raw.githubusercontent.com/[YOUR_GITHUB_U
 ```
 (Alternatively, using `wget`: `wget -O merchant_center_products.json [URL]` )
 
-## 4. Load Data into BigQuery Tables
+## 5. Load Data into BigQuery Tables
 
-Use the downloaded JSON files to load data into your BigQuery tables. Each file will be loaded into a table named `products` within its respective dataset. The `--autodetect` flag will be used for schema detection.
-
-Replace `[YOUR_PROJECT_ID]` with your actual project ID.
+Use the downloaded JSON files to load data into your BigQuery tables. Each file will be loaded into a table named `products` within its respective dataset. The `--autodetect` flag will be used for schema detection. The commands use the set `$GCP_PROJECT_ID` environment variable.
 
 *   Load `merchant_center_products.json` into `merchant_center.products` table:
     ```bash
-    bq load --project_id=[YOUR_PROJECT_ID] \
+    bq load --project_id=$GCP_PROJECT_ID \
       --source_format=NEWLINE_DELIMITED_JSON \
       --autodetect \
       merchant_center.products \
@@ -70,42 +96,44 @@ Replace `[YOUR_PROJECT_ID]` with your actual project ID.
 
 *   Load `retail_products.json` into `retail.products` table:
     ```bash
-    bq load --project_id=[YOUR_PROJECT_ID] \
+    bq load --project_id=$GCP_PROJECT_ID \
       --source_format=NEWLINE_DELIMITED_JSON \
       --autodetect \
       retail.products \
       ./retail_products.json
     ```
+    (On Windows Command Prompt, use `%GCP_PROJECT_ID%` instead of `$GCP_PROJECT_ID`.)
 
 **Notes:**
-*   `--source_format=NEWLINE_DELIMITED_JSON`: Indicates that the JSON file is in Newline Delimited JSON (NDJSON) format, where each JSON object is on a new line.
-*   `--autodetect`: Allows BigQuery to automatically infer the schema from the data.
-*   `./merchant_center_products.json` and `./retail_products.json`: Represent the local file paths in the current directory. Adjust the paths if your files are located elsewhere.
+*   `--source_format=NEWLINE_DELIMITED_JSON`: Indicates NDJSON format.
+*   `--autodetect`: Allows BigQuery to infer the schema.
+*   `./merchant_center_products.json` and `./retail_products.json`: Local file paths.
 
-## 5. Verify Data Upload
+## 6. Verify Data Upload
 
-To confirm that the data has been successfully loaded into the tables, you can use the following `bq` commands or query directly from the BigQuery UI in the Google Cloud Console.
+To confirm successful data loading, use the following `bq` commands or query directly from the BigQuery UI.
 
-*   Check the first 5 rows of the `merchant_center.products` table:
+*   Check the first 5 rows of `merchant_center.products`:
     ```bash
-    bq head -n 5 [YOUR_PROJECT_ID]:merchant_center.products
+    bq head -n 5 $GCP_PROJECT_ID:merchant_center.products
     ```
-*   Check the first 5 rows of the `retail.products` table:
+*   Check the first 5 rows of `retail.products`:
     ```bash
-    bq head -n 5 [YOUR_PROJECT_ID]:retail.products
-    ```
-
-*   Check the total row count for each table (SQL query):
-    ```bash
-    bq query --project_id=[YOUR_PROJECT_ID] --use_legacy_sql=false \
-    "SELECT COUNT(*) FROM \`[YOUR_PROJECT_ID].merchant_center.products\`"
-
-    bq query --project_id=[YOUR_PROJECT_ID] --use_legacy_sql=false \
-    "SELECT COUNT(*) FROM \`[YOUR_PROJECT_ID].retail.products\`"
+    bq head -n 5 $GCP_PROJECT_ID:retail.products
     ```
 
-## 6. Important Notes
+*   Check total row count for each table (SQL query):
+    ```bash
+    bq query --project_id=$GCP_PROJECT_ID --use_legacy_sql=false \
+    "SELECT COUNT(*) FROM \`$GCP_PROJECT_ID.merchant_center.products\`"
 
-*   **JSON File Format**: BigQuery expects files in **Newline Delimited JSON (NDJSON)** format. This means each JSON object must be on an individual line in the file, and the entire file should not be enclosed in a single JSON array. Ensure your files on GitHub adhere to this format, or they will need to be transformed before loading.
-*   **Error Handling**: If errors occur during loading, check the output messages from the `bq` command. You can list jobs with `bq ls -j` and view details of a specific job with `bq show -j [JOB_ID]`.
-*   **Schema Auto-detection Limitations**: While `--autodetect` is convenient, it might not always infer the schema as intended, especially with complex or inconsistent data. For production environments, explicitly defining a schema is often more reliable.
+    bq query --project_id=$GCP_PROJECT_ID --use_legacy_sql=false \
+    "SELECT COUNT(*) FROM \`$GCP_PROJECT_ID.retail.products\`"
+    ```
+    (On Windows Command Prompt, use `%GCP_PROJECT_ID%` instead of `$GCP_PROJECT_ID`. It's important to use double quotes (") for the SQL query string if it contains `$GCP_PROJECT_ID` so the shell expands the variable. If you must use single quotes, place the variable outside or use string concatenation.)
+
+## 7. Important Notes
+
+*   **JSON File Format**: BigQuery expects **Newline Delimited JSON (NDJSON)**.
+*   **Error Handling**: Check `bq` output for errors. Use `bq ls -j --project_id=$GCP_PROJECT_ID` and `bq show -j --project_id=$GCP_PROJECT_ID [JOB_ID]` for details.
+*   **Schema Auto-detection Limitations**: `--autodetect` is convenient, but explicit schema definition is more reliable for production.
